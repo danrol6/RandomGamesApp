@@ -1,0 +1,7 @@
+#MySql Configuration
+#Make necessary changes and rename file to "application.properties"
+spring.datasource.url= #Add your own database source. (Ex. jdbc:mysql://localhost:[Port]/[DatabaseName])
+spring.datasource.username=#Add your database username
+spring.datasource.password=#Add your database Password
+spring.jpa.show-sql=true
+spring.jpa.hibernate.ddl-auto=update
