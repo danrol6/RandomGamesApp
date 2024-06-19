@@ -8,7 +8,7 @@ import java.net.URL;
 
 @Service
 public class SteamAPIService {
-    private static final String API_URL = "https://api.steampowered.com/ISteamApps/GetAppList/v2/";
+    private static final String API_URL = "";
 
     //Create a connection to the API by creating a connection.
     //If the connection is good then it calls the readAPIResponse method which reads the information returned from the API
