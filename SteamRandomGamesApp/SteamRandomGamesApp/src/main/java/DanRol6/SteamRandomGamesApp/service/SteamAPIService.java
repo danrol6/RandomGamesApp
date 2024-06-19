@@ -1,13 +1,3 @@
-//Public API
-//Get details about the app:
-//https://store.steampowered.com/api/appdetails?appids=2904890
-//Get full list of apps:
-//https://api.steampowered.com/ISteamApps/GetAppList/v2/
-
-//to get a specific genre use
-//https://api.steampowered.com/ISteamApps/GetAppList/v2/?tag=RPG
-//For multiple just use tag=Casual&tag=Simulation
-
 package DanRol6.SteamRandomGamesApp.service;
 
 import org.springframework.stereotype.Service;
