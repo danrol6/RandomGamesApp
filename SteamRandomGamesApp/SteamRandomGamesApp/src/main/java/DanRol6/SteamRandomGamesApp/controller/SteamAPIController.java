@@ -1,21 +1,23 @@
 package DanRol6.SteamRandomGamesApp.controller;
 
+import DanRol6.SteamRandomGamesApp.exception.GameNameNotFoundException;
 import DanRol6.SteamRandomGamesApp.exception.IDNotFoundException;
+import DanRol6.SteamRandomGamesApp.model.GameModel;
 import DanRol6.SteamRandomGamesApp.service.SteamAPIService;
+import DanRol6.SteamRandomGamesApp.util.ReadFromFile;
+import DanRol6.SteamRandomGamesApp.util.WriteToFile;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api")
@@ -23,59 +25,65 @@ public class SteamAPIController {
 
     @Autowired
     private SteamAPIService steamAPIService;
+    private ReadFromFile readFromFile = new ReadFromFile("ListOfSteamGames.json");
 
-    //THIS WILL GET ALL THE DATA FROM THE STEAM API GAME LIST. BASICALLY IT REFRESHES THE DATABASE
+    //Get the data from the Steam API Game List
     @GetMapping("/games")
-    public ResponseEntity<String> getListOfGames() {
+    public String getListOfGames() {
         try {
-            //Calls the Steam API and stores the information into a Json file locally
-            steamAPIService.fetchSteamGamesFromAPI();
+            //Calls the Steam API and stores the results in a String
+            String storedSteamGames = steamAPIService.fetchSteamGamesFromAPI();
+
+            //Locally saves the result of the API
+            WriteToFile writeToFile = new WriteToFile(storedSteamGames, "ListOfSteamGames.json");
+            writeToFile.write();
 
             //Gets the information from the file locally and displays it
-            String storedSteamGames = steamAPIService.ReadFile();
             System.out.println(storedSteamGames);
-            return new ResponseEntity<>(storedSteamGames, HttpStatus.OK);
+            return storedSteamGames;
 
         } catch (IOException e) {
             e.printStackTrace();
-            return new ResponseEntity<>("Error fetching data from the List of Games API", HttpStatus.INTERNAL_SERVER_ERROR);
+            return "Error fetching data from the List of Games API";
         }
 
     }
 
 
     @GetMapping("/games/index/{index}")
-    public ResponseEntity<String> getAppByIndex(@PathVariable("index") int index) {
+    public String getAppByIndex(@PathVariable("index") int index) {
+        // Gets the information from the file locally
+        String storedSteamGames = readFromFile.read();
+
+        //Gets the JSON Object
+        JSONObject jsonObject = new JSONObject(storedSteamGames);
+
+        //Gets "applist" from the JSON object
+        JSONObject appList = jsonObject.getJSONObject("applist");
+
+        //Gets "apps" from the appList object
+        JSONArray apps = appList.getJSONArray("apps");
+
+        //Variable will store the game objects which will contain the game information
+        List<GameModel> listOfGames = new ArrayList<>();
+
+        //Add each game object to the list
+        for (int i = 0; i < apps.length(); i++) {
+            GameModel gameModel = new GameModel();
+            JSONObject steamGameObject = apps.getJSONObject(i);
+            gameModel.setId(steamGameObject.getLong("appid"));
+            gameModel.setName(steamGameObject.getString("name"));
+            listOfGames.add(gameModel);
+        }
+
+        //Try to get the index of the list of games, if available, will return the game ID and the game name
+        //If the index is out of bounds will return corresponding error.
         try {
-            System.out.println(index);
+            return ("ID: " + listOfGames.get(index).getId() + " Name: " + listOfGames.get(index).getName());
 
-            // Gets the information from the file locally
-            String storedSteamGames = steamAPIService.ReadFile();
-
-            //Parse the JSON string into a JSONObject
-            JSONObject jsonObject = (JSONObject) new JSONParser().parse(storedSteamGames);
-
-            // Get the "applist" object from the JSON object
-            JSONObject appList = (JSONObject) jsonObject.get("applist");
-
-            // Get the "apps" array from the "applist" object
-            JSONArray appsArray = (JSONArray) appList.get("apps");
-
-            // Get the app at the given index from the "apps" array
-            JSONObject indexApp = (JSONObject) appsArray.get(index);
-
-            // Get the "name" value from the given index item
-            String name = (String) indexApp.get("name");
-
-//            //Get the "appid" from the given index item
-            long appid = (long) indexApp.get("appid");
-
-            // Return the name with HTTP status OK
-            return new ResponseEntity<>("Game ID: " + appid + " Game Name: " + name, HttpStatus.OK);
-
-        } catch (ParseException e) {
-            e.printStackTrace();
-            return new ResponseEntity<>("Error fetching data from the list of games API", HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (IndexOutOfBoundsException e) {
+            System.out.println(e.getMessage());
+            return "Index specified is out of bounds";
         }
     }
 
@@ -83,7 +91,7 @@ public class SteamAPIController {
     public String getAppById(@PathVariable("id") long id) throws IDNotFoundException {
 
         // Gets the information from the file locally
-        String storedSteamGames = steamAPIService.ReadFile();
+        String storedSteamGames = readFromFile.read();
 
         //Gets the JSON Object
         JSONObject jsonObject = new JSONObject(storedSteamGames);
@@ -106,13 +114,11 @@ public class SteamAPIController {
         //Try will check to see if the ID is stored in the hashmap. If it is it will return the
         //respective game ID. If it is not it will throw an error and return ID not found
         try {
-            //Return variable
-            String returnAppName = games.get(id);
 
-            if (returnAppName == null) {
+            if (games.get(id) == null) {
                 throw new IDNotFoundException("The ID you are searching for does not exist");
             }
-            return returnAppName;
+            return ("ID:" + id + " Name:" + games.get(id));
         } catch (IDNotFoundException e) {
             System.out.println(e);
             return "ID Not found";
@@ -120,40 +126,45 @@ public class SteamAPIController {
     }
 
     @GetMapping("/games/name/{name}")
-    public ResponseEntity<Long> getIdByName(@PathVariable("name") String name) {
-        try {
+    public List<GameModel> getGameByName(@PathVariable("name") String name) throws GameNameNotFoundException {
 
-            // Gets the information from the file locally
-            String storedSteamGames = steamAPIService.ReadFile();
+        // Gets the information from the file locally
+        String storedSteamGames = readFromFile.read();
 
-            // Parse the JSON string into a JSONObject
-            JSONObject jsonObject = (JSONObject) new JSONParser().parse(storedSteamGames);
+        //Gets the JSON Object
+        JSONObject jsonObject = new JSONObject(storedSteamGames);
 
-            // Get the "applist" object from the JSON object
-            JSONObject appList = (JSONObject) jsonObject.get("applist");
+        //Gets "applist" from the JSON object
+        JSONObject appList = jsonObject.getJSONObject("applist");
 
-            // Get the "apps" array from the "applist" object
-            JSONArray appsArray = (JSONArray) appList.get("apps");
+        //Gets "apps" from the appList object
+        JSONArray apps = appList.getJSONArray("apps");
 
-            // Iterate through the apps array
-            for (Object obj : appsArray) {
-                JSONObject app = (JSONObject) obj;
-                // Check if the name matches the requested name
-                String appName = (String) app.get("name");
-                if (appName.equals(name)) {
-                    // If found, return the appid associated with the name
-                    long appid = (long) app.get("appid");
-                    return new ResponseEntity<>(appid, HttpStatus.OK);
-                }
-            }
+        //List will store the games that are found
+        List<GameModel> gameModels = new ArrayList<>();
 
-            // If no app with the specified name is found, return an error response
-            return new ResponseEntity<>(-1L, HttpStatus.NOT_FOUND);
-
-        } catch (ParseException e) {
-            e.printStackTrace();
-            // Return an error response if an exception occurs
-            return new ResponseEntity<>(-1L, HttpStatus.INTERNAL_SERVER_ERROR);
+        //Add each game object to the list
+        for (int i = 0; i < apps.length(); i++) {
+                JSONObject steamGameObject = apps.getJSONObject(i);
+                GameModel gameModel = new GameModel();
+                gameModel.setId(steamGameObject.getLong("appid"));
+                gameModel.setName(steamGameObject.getString("name"));
+                gameModels.add(gameModel);
         }
+
+        //Loop will check to see if the name matches any of the names in the list. If it is it will return the
+        //respective game object. If it is not it will throw an error
+        List<GameModel> gamesFound = new ArrayList<>();
+        for(int i = 0; i<gameModels.size(); i++){
+            GameModel gameModel = gameModels.get(i);
+            if(gameModel.getName().equals(name)){
+                gamesFound.add(gameModel);
+            }
+        }
+        if(gamesFound.isEmpty()){
+            throw new GameNameNotFoundException("No games were found with that name");
+        }
+
+        return gamesFound;
     }
 }
