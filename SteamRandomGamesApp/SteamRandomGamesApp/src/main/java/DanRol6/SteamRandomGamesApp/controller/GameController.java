@@ -10,7 +10,6 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
@@ -19,7 +18,6 @@ import java.util.HashMap;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api")
 public class GameController {
     private final ReadFromFile readFromFile = new ReadFromFile("ListOfSteamGames.json");
     @Autowired
@@ -40,36 +38,11 @@ public class GameController {
 
 
     @GetMapping("/games/index/{index}")
-    public String getAppByIndex(@PathVariable("index") int index) {
-        // Gets the information from the file locally
-        String storedSteamGames = readFromFile.read();
-
-        //Gets the JSON Object
-        JSONObject jsonObject = new JSONObject(storedSteamGames);
-
-        //Gets "applist" from the JSON object
-        JSONObject appList = jsonObject.getJSONObject("applist");
-
-        //Gets "apps" from the appList object
-        JSONArray apps = appList.getJSONArray("apps");
-
-        //Variable will store the game objects which will contain the game information
-        List<GameModel> listOfGames = new ArrayList<>();
-
-        //Add each game object to the list
-        for (int i = 0; i < apps.length(); i++) {
-            GameModel gameModel = new GameModel();
-            JSONObject steamGameObject = apps.getJSONObject(i);
-            gameModel.setId(steamGameObject.getLong("appid"));
-            gameModel.setName(steamGameObject.getString("name"));
-            listOfGames.add(gameModel);
-        }
-
+    public String getGameByIndex(@PathVariable("index") int index) {
         //Try to get the index of the list of games, if available, will return the game ID and the game name
         //If the index is out of bounds will return corresponding error.
         try {
-            return ("ID: " + listOfGames.get(index).getId() + " Name: " + listOfGames.get(index).getName());
-
+            return gameService.getGameByIndex(index);
         } catch (IndexOutOfBoundsException e) {
             System.out.println(e.getMessage());
             return "Index specified is out of bounds";
@@ -77,7 +50,7 @@ public class GameController {
     }
 
     @GetMapping("/games/id/{id}")
-    public String getAppById(@PathVariable("id") long id){
+    public String getAppById(@PathVariable("id") long id) {
 
         // Gets the information from the file locally
         String storedSteamGames = readFromFile.read();
