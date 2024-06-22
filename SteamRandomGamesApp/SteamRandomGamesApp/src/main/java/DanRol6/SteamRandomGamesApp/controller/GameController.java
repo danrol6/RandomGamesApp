@@ -82,7 +82,7 @@ public class GameController {
             }
             return ("ID:" + id + " Name:" + games.get(id));
         } catch (IDNotFoundException e) {
-            System.out.println(e);
+            System.out.println(e.getMessage());
             return "ID Not found";
         }
     }

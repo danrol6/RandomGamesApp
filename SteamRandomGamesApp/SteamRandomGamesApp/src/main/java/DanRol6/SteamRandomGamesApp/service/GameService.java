@@ -19,12 +19,12 @@ public class GameService {
     private SteamAPIService steamAPIService;
     private ReadFromFile readFromFile = new ReadFromFile("ListOfSteamGames.json");
 
-    private String storedSteamGames;
+
 
     public String fetchAndStoreGames() throws IOException {
 
         //Calls the Steam API and stores the results in a String
-        storedSteamGames = steamAPIService.fetchSteamGamesFromAPI();
+        String storedSteamGames = steamAPIService.fetchSteamGamesFromAPI();
 
         //Locally saves the result of the API
         WriteToFile writeToFile = new WriteToFile(storedSteamGames, "ListOfSteamGames.json");
