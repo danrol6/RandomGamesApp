@@ -15,7 +15,7 @@ import java.util.List;
 
 @RestController
 public class GameController {
-    private final ReadFromFile readFromFile = new ReadFromFile("ListOfSteamGames.json");
+
     @Autowired
     private GameService gameService;
 

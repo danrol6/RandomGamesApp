@@ -18,7 +18,7 @@ public class GameService {
 
     @Autowired
     private SteamAPIService steamAPIService;
-    private ReadFromFile readFromFile = new ReadFromFile("ListOfSteamGames.json");
+    private final ReadFromFile readFromFile = new ReadFromFile("ListOfSteamGames.json");
 
 
     public String fetchAndStoreGames() throws IOException {
