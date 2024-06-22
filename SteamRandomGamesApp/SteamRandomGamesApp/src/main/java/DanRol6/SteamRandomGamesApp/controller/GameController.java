@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 public class GameController {
@@ -50,37 +51,16 @@ public class GameController {
     }
 
     @GetMapping("/games/id/{id}")
-    public String getAppById(@PathVariable("id") long id) {
+    public String getGameById(@PathVariable("id") long id) {
 
-        // Gets the information from the file locally
-        String storedSteamGames = readFromFile.read();
-
-        //Gets the JSON Object
-        JSONObject jsonObject = new JSONObject(storedSteamGames);
-
-        //Gets "applist" from the JSON object
-        JSONObject appList = (JSONObject) jsonObject.get("applist");
-
-        //Gets "apps" from the appList object
-        JSONArray jsonArray = (JSONArray) appList.get("apps");
-
-        //Stores the game ID and the game name
-        HashMap<Long, String> games = new HashMap<>();
-
-        //Adds each game ID and game name to a hashmap
-        for (int i = 0; i < jsonArray.length(); i++) {
-            JSONObject steamGameObject = jsonArray.getJSONObject(i);
-            games.put(steamGameObject.getLong("appid"), steamGameObject.getString("name"));
-        }
-
-        //Try will check to see if the ID is stored in the hashmap. If it is it will return the
+        //Try will check to see if there is a game with the given ID. If it is it will return the
         //respective game ID. If it is not it will throw an error and return ID not found
         try {
-
-            if (games.get(id) == null) {
+            Optional<String> gameName = gameService.getGameById(id);
+            if (gameName.isEmpty()) {
                 throw new IDNotFoundException("The ID you are searching for does not exist");
             }
-            return ("ID:" + id + " Name:" + games.get(id));
+            return ("ID:" + id + " Name:" + gameName);
         } catch (IDNotFoundException e) {
             System.out.println(e.getMessage());
             return "ID Not found";

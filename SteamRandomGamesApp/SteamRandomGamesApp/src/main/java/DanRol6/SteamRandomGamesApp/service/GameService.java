@@ -1,5 +1,6 @@
 package DanRol6.SteamRandomGamesApp.service;
 
+import DanRol6.SteamRandomGamesApp.exception.IDNotFoundException;
 import DanRol6.SteamRandomGamesApp.model.GameModel;
 import DanRol6.SteamRandomGamesApp.util.ReadFromFile;
 import DanRol6.SteamRandomGamesApp.util.WriteToFile;
@@ -7,10 +8,14 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class GameService {
@@ -73,6 +78,23 @@ public class GameService {
 
         //Try to get the index of the list of games, if available, will return the game ID and the game name
         return ("ID: " + listOfGames.get(index).getId() + " Name: " + listOfGames.get(index).getName());
+    }
+
+
+    public Optional<String> getGameById(long id) {
+
+        List<GameModel> listOfGames = getAllGames();
+
+        //Stores the game ID and the game name
+        HashMap<Long, String> games = new HashMap<>();
+
+        //Adds each game ID and game name to a hashmap
+        for (GameModel game : listOfGames) {
+            games.put(game.getId(), game.getName());
+        }
+
+        //Returns the game name if found, if not found then it will return empty
+        return Optional.ofNullable(games.get(id));
     }
 
 }
