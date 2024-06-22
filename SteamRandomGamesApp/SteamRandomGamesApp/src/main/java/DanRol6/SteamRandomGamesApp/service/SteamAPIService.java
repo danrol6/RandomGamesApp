@@ -9,13 +9,15 @@ import java.net.URL;
 
 @Service
 public class SteamAPIService {
+    @Value("${api.url}")
+    private String apiurl;
     @Value("${api.key}")
-    private String apiKey;
+    private String apikey;
 
     //Create a connection to the API by creating a connection.
     //If the connection is good then it calls the readAPIResponse method which reads the information returned from the API
     public String fetchSteamGamesFromAPI() throws IOException {
-        URL url = new URL(apiKey);
+        URL url = new URL(apiurl + "?key=" + apikey);
 
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("GET");
@@ -26,9 +28,10 @@ public class SteamAPIService {
 
         if (responseCode != HttpURLConnection.HTTP_OK) {
             throw new RuntimeException("HttpResponseCode: " + responseCode);
-        } else {
-            return readAPIResponse(conn);
         }
+
+        return readAPIResponse(conn);
+
     }
 
     //Reads the response from the API and appends the entire JSON information obtained from the server
