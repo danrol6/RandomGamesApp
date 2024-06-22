@@ -5,18 +5,13 @@ import DanRol6.SteamRandomGamesApp.exception.IDNotFoundException;
 import DanRol6.SteamRandomGamesApp.model.GameModel;
 import DanRol6.SteamRandomGamesApp.service.GameService;
 import DanRol6.SteamRandomGamesApp.util.ReadFromFile;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 public class GameController {
@@ -56,8 +51,8 @@ public class GameController {
         //Try will check to see if there is a game with the given ID. If it is it will return the
         //respective game ID. If it is not it will throw an error and return ID not found
         try {
-            Optional<String> gameName = gameService.getGameById(id);
-            if (gameName.isEmpty()) {
+            String gameName = gameService.getGameById(id);
+            if (gameName == null) {
                 throw new IDNotFoundException("The ID you are searching for does not exist");
             }
             return ("ID:" + id + " Name:" + gameName);
@@ -68,45 +63,22 @@ public class GameController {
     }
 
     @GetMapping("/games/name/{name}")
-    public List<GameModel> getGameByName(@PathVariable("name") String name) throws GameNameNotFoundException {
+    public List<GameModel> getGameByName(@PathVariable("name") String name) {
+        //Gets the list of games found
+        List<GameModel> gamesFound = gameService.getGameByName(name);
+        System.out.println(gamesFound);
 
-        // Gets the information from the file locally
-        String storedSteamGames = readFromFile.read();
-
-        //Gets the JSON Object
-        JSONObject jsonObject = new JSONObject(storedSteamGames);
-
-        //Gets "applist" from the JSON object
-        JSONObject appList = jsonObject.getJSONObject("applist");
-
-        //Gets "apps" from the appList object
-        JSONArray apps = appList.getJSONArray("apps");
-
-        //List will store the games that are found
-        List<GameModel> gameModels = new ArrayList<>();
-
-        //Add each game object to the list
-        for (int i = 0; i < apps.length(); i++) {
-            JSONObject steamGameObject = apps.getJSONObject(i);
-            GameModel gameModel = new GameModel();
-            gameModel.setId(steamGameObject.getLong("appid"));
-            gameModel.setName(steamGameObject.getString("name"));
-            gameModels.add(gameModel);
-        }
-
-        //Loop will check to see if the name matches any of the names in the list. If it is it will return the
-        //respective game object. If it is not it will throw an error
-        List<GameModel> gamesFound = new ArrayList<>();
-        for (int i = 0; i < gameModels.size(); i++) {
-            GameModel gameModel = gameModels.get(i);
-            if (gameModel.getName().equals(name)) {
-                gamesFound.add(gameModel);
+        try {
+            //If no games were found, it will throw an error instead stating that No games were found.
+            if (gamesFound.isEmpty()) {
+                throw new GameNameNotFoundException("No games were found with that name");
             }
-        }
-        if (gamesFound.isEmpty()) {
-            throw new GameNameNotFoundException("No games were found with that name");
-        }
 
-        return gamesFound;
+            return gamesFound;
+
+        } catch (GameNameNotFoundException e) {
+            System.out.println(e.getMessage());
+            return gamesFound;
+        }
     }
 }

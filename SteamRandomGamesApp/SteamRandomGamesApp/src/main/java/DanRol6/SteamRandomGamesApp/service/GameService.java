@@ -1,6 +1,5 @@
 package DanRol6.SteamRandomGamesApp.service;
 
-import DanRol6.SteamRandomGamesApp.exception.IDNotFoundException;
 import DanRol6.SteamRandomGamesApp.model.GameModel;
 import DanRol6.SteamRandomGamesApp.util.ReadFromFile;
 import DanRol6.SteamRandomGamesApp.util.WriteToFile;
@@ -8,14 +7,11 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class GameService {
@@ -23,7 +19,6 @@ public class GameService {
     @Autowired
     private SteamAPIService steamAPIService;
     private ReadFromFile readFromFile = new ReadFromFile("ListOfSteamGames.json");
-
 
 
     public String fetchAndStoreGames() throws IOException {
@@ -81,7 +76,7 @@ public class GameService {
     }
 
 
-    public Optional<String> getGameById(long id) {
+    public String getGameById(long id) {
 
         List<GameModel> listOfGames = getAllGames();
 
@@ -94,7 +89,25 @@ public class GameService {
         }
 
         //Returns the game name if found, if not found then it will return empty
-        return Optional.ofNullable(games.get(id));
+        return games.get(id);
+    }
+
+
+    public List<GameModel> getGameByName(String name) {
+        //Contains the list of games
+        List<GameModel> listOfGames = getAllGames();
+
+        //Contains the list of games found by name
+        List<GameModel> gamesFound = new ArrayList<>();
+
+        //Loop will check to see if the name matches any of the names in the list
+        for (GameModel game : listOfGames) {
+            if (game.getName().equals(name)) {
+                gamesFound.add(game);
+            }
+        }
+
+        return gamesFound;
     }
 
 }
