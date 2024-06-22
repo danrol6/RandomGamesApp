@@ -4,7 +4,6 @@ import DanRol6.SteamRandomGamesApp.exception.GameNameNotFoundException;
 import DanRol6.SteamRandomGamesApp.exception.IDNotFoundException;
 import DanRol6.SteamRandomGamesApp.model.GameModel;
 import DanRol6.SteamRandomGamesApp.service.GameService;
-import DanRol6.SteamRandomGamesApp.util.ReadFromFile;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
